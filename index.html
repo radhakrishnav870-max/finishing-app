@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Finishing App</title>
+<style>
+body{font-family:Arial;background:#eee;}
+.box{max-width:420px;margin:auto;background:#fff;padding:15px;border-radius:10px;}
+h2{text-align:center;}
+button,input{width:100%;padding:10px;margin-top:6px;}
+.hide{display:none;}
+.card{border:1px solid #ccc;padding:8px;margin-top:5px;border-radius:6px;}
+.ok{background:#c8f7c5;padding:5px;margin:3px 0;}
+.bad{background:#f7c5c5;padding:5px;margin:3px 0;}
+</style>
+</head>
+<body>
+
+<div class="box">
+
+<!-- HOME -->
+<div id="home">
+<h2>HOME</h2>
+<button onclick="show('master')">MASTER SHEET</button>
+<button onclick="show('check')">FINISHING CHECK</button>
+</div>
+
+<!-- MASTER -->
+<div id="master" class="hide">
+<h2>MASTER</h2>
+<button onclick="show('oemForm')">OEM</button>
+<button onclick="show('otherForm')">OTHERS</button>
+<button onclick="show('home')">BACK</button>
+<div id="masterList"></div>
+</div>
+
+<!-- OEM -->
+<div id="oemForm" class="hide">
+<h2>OEM MASTER</h2>
+<input id="o_type" placeholder="Type (3.0 AH Honda)">
+<input id="o_plant" placeholder="Plant (E)">
+<input id="o_product" placeholder="Product (AE64)">
+<input id="o_part" placeholder="Part No">
+<button onclick="saveOEM()">SAVE</button>
+<button onclick="show('master')">BACK</button>
+</div>
+
+<!-- OTHER -->
+<div id="otherForm" class="hide">
+<h2>OTHERS MASTER</h2>
+<input id="n_type" placeholder="Type (MF4-3AH Cobrand)">
+<input id="n_plant" placeholder="Plant (E)">
+<input id="n_product" placeholder="Product (AE16)">
+<input id="n_part" placeholder="Part No">
+<button onclick="saveOTHER()">SAVE</button>
+<button onclick="show('master')">BACK</button>
+</div>
+
+<!-- CHECK -->
+<div id="check" class="hide">
+<h2>FINISHING CHECK</h2>
+<input id="f_serial" placeholder="Enter Serial Number">
+<input id="f_line" placeholder="Enter Line">
+<button onclick="checkSerial()">CHECK</button>
+<div id="result"></div>
+<button onclick="show('home')">BACK</button>
+</div>
+
+</div>
+
+<script>
+let db = JSON.parse(localStorage.getItem("masterDB")) || [];
+
+function show(id){
+ ["home","master","oemForm","otherForm","check"].forEach(x=>document.getElementById(x).classList.add("hide"));
+ document.getElementById(id).classList.remove("hide");
+ if(id=="master") viewMaster();
+}
+
+function saveOEM(){
+ db.push({mode:"OEM",type:o_type.value,plant:o_plant.value,product:o_product.value,part:o_part.value});
+ localStorage.setItem("masterDB",JSON.stringify(db));
+ alert("OEM Saved");
+}
+
+function saveOTHER(){
+ db.push({mode:"OTHER",type:n_type.value,plant:n_plant.value,product:n_product.value,part:n_part.value});
+ localStorage.setItem("masterDB",JSON.stringify(db));
+ alert("OTHER Saved");
+}
+
+function viewMaster(){
+ let out="";
+ db.forEach((x,i)=>{
+  out+=`<div class="card">${x.mode} - ${x.type} - ${x.product}
+  <button onclick="del(${i})">Delete</button></div>`;
+ });
+ masterList.innerHTML=out;
+}
+
+function del(i){
+ db.splice(i,1);
+ localStorage.setItem("masterDB",JSON.stringify(db));
+ viewMaster();
+}
+
+function getWeekCode(){
+ let d=new Date();
+ let onejan=new Date(d.getFullYear(),0,1);
+ return String(Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7)).padStart(2,"0");
+}
+
+function getMonthCode(m){
+ return String.fromCharCode(64+m); // A=1, B=2, C=3...
+}
+
+function getYearCode(){
+ let y=new Date().getFullYear();
+ return String.fromCharCode(65 + (y - 2026)); // 2026=A, 2027=B, 2028=C
+}
+
+function row(label,val,ok){
+ return `<div class="${ok?'ok':'bad'}">${label}: ${val}</div>`;
+}
+
+function checkSerial(){
+ let s=f_serial.value.trim();
+ let inputLine=f_line.value.trim();
+
+ let plant=s.substring(0,1);
+ let product=s.substring(1,5);
+ let code1=s.substring(5,7);   // date OR week
+ let code2=s.substring(7,8);   // month OR year
+ let lineCode=s.substring(8,9);
+ let running=s.substring(9);
+
+ let found=db.find(x=>x.product==product && x.plant==plant);
+ if(!found){
+   result.innerHTML="<div class='bad'>MASTER NOT FOUND</div>";
+   return;
+ }
+
+ let today=new Date();
+ let todayDate=String(today.getDate()).padStart(2,"0");
+ let todayMonth=getMonthCode(today.getMonth()+1);
+ let weekCode=getWeekCode();
+ let yearCode=getYearCode();
+
+ let plantMatch = plant==found.plant;
+ let productMatch = product==found.product;
+ let lineMatch = lineCode==inputLine;
+
+ let html=`Detected Type: ${found.type}<br>`;
+
+ if(found.mode=="OEM"){
+  let dateMatch = code1==todayDate;
+  let monthMatch = code2==todayMonth;
+
+  html+=row("Plant",plant,plantMatch);
+  html+=row("Product",product,productMatch);
+  html+=row("Date",code1,dateMatch);
+  html+=row("Month Code",code2,monthMatch);
+  html+=row("Line",lineCode,lineMatch);
+  html+=`Serial Number: ${running}<br>Part No: ${found.part||"-"}<br>`;
+
+  html+= (plantMatch&&productMatch&&dateMatch&&monthMatch&&lineMatch)
+        ?"<b class='ok'>✔ MATCH</b>"
+        :"<b class='bad'>❌ NOT MATCH</b>";
+ }
+
+ if(found.mode=="OTHER"){
+  let weekMatch = code1==weekCode;
+  let yearMatch = code2==yearCode;
+
+  html+=row("Plant",plant,plantMatch);
+  html+=row("Product",product,productMatch);
+  html+=row("Week Code",code1,weekMatch);
+  html+=row("Year Code",code2,yearMatch);
+  html+=row("Line",lineCode,lineMatch);
+  html+=`Serial Number: ${running}<br>Part No: ${found.part||"-"}<br>`;
+
+  html+= (plantMatch&&productMatch&&weekMatch&&yearMatch&&lineMatch)
+        ?"<b class='ok'>✔ MATCH</b>"
+        :"<b class='bad'>❌ NOT MATCH</b>";
+ }
+
+ result.innerHTML=html;
+}
+</script>
+</body>
+</html>
