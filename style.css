@@ -1,0 +1,89 @@
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  padding:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:#dcdcdc;
+}
+
+/* App container – full mobile screen */
+.box{
+  width:100%;
+  max-width:430px;
+  min-height:100vh;
+  margin:auto;
+  background:#ffffff;
+  padding:14px;
+  border-radius:16px;
+  box-shadow:0 0 15px rgba(0,0,0,0.2);
+}
+
+/* Headings */
+h2{
+  text-align:center;
+  margin:10px 0 15px 0;
+  font-size:20px;
+  color:#222;
+}
+
+/* Inputs */
+input,textarea{
+  width:100%;
+  padding:14px;
+  margin-top:8px;
+  font-size:16px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  outline:none;
+}
+
+/* Buttons base */
+button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  font-size:16px;
+  border-radius:12px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* Button colors */
+.btn-normal{ background:#1976d2; color:white; }   /* blue */
+.btn-check{ background:#2e7d32; color:white; }    /* green */
+.btn-back{ background:#000000; color:white; }     /* black */
+.btn-edit{ background:#c0c0c0; color:black; }     /* silver */
+.btn-delete{ background:#e53935; color:white; }   /* red */
+
+/* Hide screens */
+.hide{ display:none; }
+
+/* Cards */
+.card{
+  border:1px solid #ddd;
+  padding:10px;
+  margin-top:10px;
+  border-radius:12px;
+  background:#f9f9f9;
+}
+
+/* Result colors */
+.ok{
+  background:#c8f7c5;
+  padding:8px;
+  margin:5px 0;
+  border-radius:8px;
+}
+
+.bad{
+  background:#f7c5c5;
+  padding:8px;
+  margin:5px 0;
+  border-radius:8px;
+}
+</style>

@@ -1,190 +1,249 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Finishing App</title>
+<link rel="stylesheet" href="style.css">
 <meta charset="UTF-8">
 <title>Finishing App</title>
 <style>
 body{font-family:Arial;background:#eee;}
 .box{max-width:420px;margin:auto;background:#fff;padding:15px;border-radius:10px;}
 h2{text-align:center;}
-button,input{width:100%;padding:10px;margin-top:6px;}
+button,input,textarea{width:100%;padding:10px;margin-top:6px;}
 .hide{display:none;}
 .card{border:1px solid #ccc;padding:8px;margin-top:5px;border-radius:6px;}
 .ok{background:#c8f7c5;padding:5px;margin:3px 0;}
 .bad{background:#f7c5c5;padding:5px;margin:3px 0;}
 </style>
 </head>
-<body>
 
+<body>
 <div class="box">
 
 <!-- HOME -->
 <div id="home">
 <h2>HOME</h2>
-<button onclick="show('master')">MASTER SHEET</button>
-<button onclick="show('check')">FINISHING CHECK</button>
+<button class="btn-normal" onclick="show('master')">MASTER SHEET</button>
+<button class="btn-normal" onclick="show('check')">FINISHING CHECK</button>
 </div>
 
 <!-- MASTER -->
 <div id="master" class="hide">
 <h2>MASTER</h2>
-<button onclick="show('oemForm')">OEM</button>
-<button onclick="show('otherForm')">OTHERS</button>
-<button onclick="show('home')">BACK</button>
+<button class="btn-normal" onclick="show('oemForm')">OEM</button>
+<button class="btn-normal" onclick="show('otherForm')">OTHERS</button>
+<button class="btn-back" onclick="show('home')">BACK</button>
 <div id="masterList"></div>
 </div>
 
 <!-- OEM -->
 <div id="oemForm" class="hide">
 <h2>OEM MASTER</h2>
-<input id="o_type" placeholder="Type (3.0 AH Honda)">
+<input id="o_type" placeholder="Type (Honda 3AH)">
 <input id="o_plant" placeholder="Plant (E)">
 <input id="o_product" placeholder="Product (AE64)">
 <input id="o_part" placeholder="Part No">
-<button onclick="saveOEM()">SAVE</button>
-<button onclick="show('master')">BACK</button>
+<input id="o_qty" placeholder="PDIR Batteries Qty">
+<textarea id="o_remark" placeholder="Remark (product wise)"></textarea>
+<button class="btn-normal" onclick="saveOEM()">SAVE</button>
+<button class="btn-back" onclick="show('master')">BACK</button>
 </div>
 
 <!-- OTHER -->
 <div id="otherForm" class="hide">
 <h2>OTHERS MASTER</h2>
-<input id="n_type" placeholder="Type (MF4-3AH Cobrand)">
+<input id="n_type" placeholder="Type (MF4-AM)">
 <input id="n_plant" placeholder="Plant (E)">
 <input id="n_product" placeholder="Product (AE16)">
 <input id="n_part" placeholder="Part No">
-<button onclick="saveOTHER()">SAVE</button>
-<button onclick="show('master')">BACK</button>
+<input id="n_qty" placeholder="PDIR Batteries Qty">
+<textarea id="n_remark" placeholder="Remark (product wise)"></textarea>
+<button class="btn-normal" onclick="saveOEM()">SAVE</button>
+<button class="btn-back" onclick="show('master')">BACK</button>
 </div>
 
 <!-- CHECK -->
 <div id="check" class="hide">
 <h2>FINISHING CHECK</h2>
-<input id="f_serial" placeholder="Enter Serial Number">
+
+<input id="f_serial" placeholder="Enter Serial Number (Manual Only)">
 <input id="f_line" placeholder="Enter Line">
-<button onclick="checkSerial()">CHECK</button>
+<button class="btn-check" onclick="checkSerial()">CHECK</button>
 <div id="result"></div>
-<button onclick="show('home')">BACK</button>
+<button class="btn-back" onclick="show('home')">BACK</button>
 </div>
 
 </div>
 
 <script>
 let db = JSON.parse(localStorage.getItem("masterDB")) || [];
+let editIndex = -1;
 
 function show(id){
- ["home","master","oemForm","otherForm","check"].forEach(x=>document.getElementById(x).classList.add("hide"));
- document.getElementById(id).classList.remove("hide");
- if(id=="master") viewMaster();
+["home","master","oemForm","otherForm","check"].forEach(x=>document.getElementById(x).classList.add("hide"));
+document.getElementById(id).classList.remove("hide");
+if(id=="master") viewMaster();
 }
 
 function saveOEM(){
- db.push({mode:"OEM",type:o_type.value,plant:o_plant.value,product:o_product.value,part:o_part.value});
- localStorage.setItem("masterDB",JSON.stringify(db));
- alert("OEM Saved");
+let obj={
+mode:"OEM",
+type:o_type.value,
+plant:o_plant.value,
+product:o_product.value,
+part:o_part.value,
+qty:o_qty.value,
+remark:o_remark.value
+};
+if(editIndex==-1) db.push(obj); else db[editIndex]=obj;
+editIndex=-1;
+localStorage.setItem("masterDB",JSON.stringify(db));
+alert("OEM Saved");
+show("master");
 }
 
 function saveOTHER(){
- db.push({mode:"OTHER",type:n_type.value,plant:n_plant.value,product:n_product.value,part:n_part.value});
- localStorage.setItem("masterDB",JSON.stringify(db));
- alert("OTHER Saved");
+let obj={
+mode:"OTHER",
+type:n_type.value,
+plant:n_plant.value,
+product:n_product.value,
+part:n_part.value,
+qty:n_qty.value,
+remark:n_remark.value
+};
+if(editIndex==-1) db.push(obj); else db[editIndex]=obj;
+editIndex=-1;
+localStorage.setItem("masterDB",JSON.stringify(db));
+alert("OTHER Saved");
+show("master");
 }
 
 function viewMaster(){
- let out="";
- db.forEach((x,i)=>{
-  out+=`<div class="card">${x.mode} - ${x.type} - ${x.product}
-  <button onclick="del(${i})">Delete</button></div>`;
- });
- masterList.innerHTML=out;
+let out="";
+db.forEach((x,i)=>{
+out+=`
+<div class="card">
+<b>${x.mode}</b><br>
+Type: ${x.type}<br>
+Plant: ${x.plant}<br>
+Product: ${x.product}<br>
+Part: ${x.part}<br>
+PDIR Qty: ${x.qty}<br>
+Remark: ${x.remark || "-"}<br>
+<button class="btn-edit" onclick="edit(${i})">EDIT</button>
+<button class="btn-delete" onclick="del(${i})">DELETE</button>
+</div>`;
+});
+masterList.innerHTML=out;
+}
+
+function edit(i){
+let x=db[i];
+editIndex=i;
+if(x.mode=="OEM"){
+show("oemForm");
+o_type.value=x.type;
+o_plant.value=x.plant;
+o_product.value=x.product;
+o_part.value=x.part;
+o_qty.value=x.qty;
+o_remark.value=x.remark;
+}else{
+show("otherForm");
+n_type.value=x.type;
+n_plant.value=x.plant;
+n_product.value=x.product;
+n_part.value=x.part;
+n_qty.value=x.qty;
+n_remark.value=x.remark;
+}
 }
 
 function del(i){
- db.splice(i,1);
- localStorage.setItem("masterDB",JSON.stringify(db));
- viewMaster();
+if(confirm("Delete?")){
+db.splice(i,1);
+localStorage.setItem("masterDB",JSON.stringify(db));
+viewMaster();
+}
 }
 
 function getWeekCode(){
- let d=new Date();
- let onejan=new Date(d.getFullYear(),0,1);
- return String(Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7)).padStart(2,"0");
+let d=new Date(); let onejan=new Date(d.getFullYear(),0,1);
+return String(Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7)).padStart(2,"0");
 }
-
-function getMonthCode(m){
- return String.fromCharCode(64+m); // A=1, B=2, C=3...
-}
-
-function getYearCode(){
- let y=new Date().getFullYear();
- return String.fromCharCode(65 + (y - 2026)); // 2026=A, 2027=B, 2028=C
-}
-
-function row(label,val,ok){
- return `<div class="${ok?'ok':'bad'}">${label}: ${val}</div>`;
-}
+function getMonthCode(m){return String.fromCharCode(64+m);}
+function getYearCode(){let y=new Date().getFullYear();return String.fromCharCode(65+(y-2026));}
+function row(l,v,o){return `<div class="${o?'ok':'bad'}">${l}: ${v}</div>`;}
 
 function checkSerial(){
- let s=f_serial.value.trim();
- let inputLine=f_line.value.trim();
+let s=f_serial.value.trim().toUpperCase();
+let inputLine=f_line.value.trim();
 
- let plant=s.substring(0,1);
- let product=s.substring(1,5);
- let code1=s.substring(5,7);   // date OR week
- let code2=s.substring(7,8);   // month OR year
- let lineCode=s.substring(8,9);
- let running=s.substring(9);
+if(s.length<9){
+result.innerHTML="<div class='bad'>INVALID SERIAL</div>";
+return;
+}
 
- let found=db.find(x=>x.product==product && x.plant==plant);
- if(!found){
-   result.innerHTML="<div class='bad'>MASTER NOT FOUND</div>";
-   return;
- }
+let plant=s.substring(0,1);
+let product=s.substring(1,5);
+let code1=s.substring(5,7);
+let code2=s.substring(7,8);
+let lineCode=s.substring(8,9);
+let running=s.substring(9);
 
- let today=new Date();
- let todayDate=String(today.getDate()).padStart(2,"0");
- let todayMonth=getMonthCode(today.getMonth()+1);
- let weekCode=getWeekCode();
- let yearCode=getYearCode();
+let found=db.find(x=>x.product==product && x.plant==plant);
+if(!found){
+result.innerHTML="<div class='bad'>MASTER NOT FOUND</div>";
+return;
+}
 
- let plantMatch = plant==found.plant;
- let productMatch = product==found.product;
- let lineMatch = lineCode==inputLine;
+let today=new Date();
+let todayDate=String(today.getDate()).padStart(2,"0");
+let todayMonth=getMonthCode(today.getMonth()+1);
+let weekCode=getWeekCode();
+let yearCode=getYearCode();
 
- let html=`Detected Type: ${found.type}<br>`;
+let plantMatch=plant==found.plant;
+let productMatch=product==found.product;
+let lineMatch=lineCode==inputLine;
 
- if(found.mode=="OEM"){
-  let dateMatch = code1==todayDate;
-  let monthMatch = code2==todayMonth;
+let html=`Detected Type: ${found.type}<br>`;
+let ok=false;
 
-  html+=row("Plant",plant,plantMatch);
-  html+=row("Product",product,productMatch);
-  html+=row("Date",code1,dateMatch);
-  html+=row("Month Code",code2,monthMatch);
-  html+=row("Line",lineCode,lineMatch);
-  html+=`Serial Number: ${running}<br>Part No: ${found.part||"-"}<br>`;
+if(found.mode=="OEM"){
+let dateMatch=code1==todayDate;
+let monthMatch=code2==todayMonth;
+html+=row("Plant",plant,plantMatch);
+html+=row("Product",product,productMatch);
+html+=row("Date",code1,dateMatch);
+html+=row("Month",code2,monthMatch);
+html+=row("Line",lineCode,lineMatch);
+ok=(plantMatch&&productMatch&&dateMatch&&monthMatch&&lineMatch);
+}
 
-  html+= (plantMatch&&productMatch&&dateMatch&&monthMatch&&lineMatch)
-        ?"<b class='ok'>✔ MATCH</b>"
-        :"<b class='bad'>❌ NOT MATCH</b>";
- }
+if(found.mode=="OTHER"){
+let weekMatch=code1==weekCode;
+let yearMatch=code2==yearCode;
+html+=row("Plant",plant,plantMatch);
+html+=row("Product",product,productMatch);
+html+=row("Week",code1,weekMatch);
+html+=row("Year",code2,yearMatch);
+html+=row("Line",lineCode,lineMatch);
+ok=(plantMatch&&productMatch&&weekMatch&&yearMatch&&lineMatch);
+}
 
- if(found.mode=="OTHER"){
-  let weekMatch = code1==weekCode;
-  let yearMatch = code2==yearCode;
+html+=`Serial: ${running}<br>`;
+html+=`Part: ${found.part}<br>`;
+html+=`PDIR Qty: ${found.qty}<br>`;
+html+=`<b>Remark:</b> ${found.remark || "-"}<br>`;
 
-  html+=row("Plant",plant,plantMatch);
-  html+=row("Product",product,productMatch);
-  html+=row("Week Code",code1,weekMatch);
-  html+=row("Year Code",code2,yearMatch);
-  html+=row("Line",lineCode,lineMatch);
-  html+=`Serial Number: ${running}<br>Part No: ${found.part||"-"}<br>`;
+if(ok) html+="<b class='ok'>✔ MATCH</b>";
+else html+="<b class='bad'>❌ NOT MATCH</b>";
 
-  html+= (plantMatch&&productMatch&&weekMatch&&yearMatch&&lineMatch)
-        ?"<b class='ok'>✔ MATCH</b>"
-        :"<b class='bad'>❌ NOT MATCH</b>";
- }
-
- result.innerHTML=html;
+result.innerHTML=html;
 }
 </script>
 </body>
